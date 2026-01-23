@@ -132,7 +132,7 @@ app.post("/api/level-up", async (req, res) => {
 
 /* ======================
    API: POST /api/update-profile
-   Updates user location and/or status_message
+   Updates user location, status_message, and/or level
    Requires x-telegram-init-data header
 ====================== */
 
@@ -159,7 +159,7 @@ app.post("/api/update-profile", async (req, res) => {
       return res.status(401).json({ error: err.message, details: "initData verification failed" });
     }
 
-    const { location, status_message } = req.body;
+    const { location, status_message, level } = req.body;
 
     // Validate lengths
     if (location !== undefined && location !== null && location.length > MAX_TEXT_LENGTH) {
@@ -167,6 +167,13 @@ app.post("/api/update-profile", async (req, res) => {
     }
     if (status_message !== undefined && status_message !== null && status_message.length > MAX_TEXT_LENGTH) {
       return res.status(400).json({ error: `Status message too long (max ${MAX_TEXT_LENGTH} chars)` });
+    }
+
+    // Validate level
+    if (level !== undefined && level !== null) {
+      if (typeof level !== 'number' || level < 0 || level > 6) {
+        return res.status(400).json({ error: 'Invalid level (must be 0-6)' });
+      }
     }
 
     // Check if user exists
@@ -192,6 +199,11 @@ app.post("/api/update-profile", async (req, res) => {
     if (status_message !== undefined) {
       updates.push(`status_message = $${paramIndex++}`);
       values.push(status_message);
+    }
+
+    if (level !== undefined && level !== null) {
+      updates.push(`level = $${paramIndex++}`);
+      values.push(level);
     }
 
     if (updates.length === 0) {

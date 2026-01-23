@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from 'cors';
-import { bot } from "./lib/bot.js";
+import { bot, sendStatusNotification } from "./lib/bot.js";
 import { pool } from "./lib/db.js";
 import { verifyTelegramWebAppData } from "./lib/telegram.js";
 
@@ -120,6 +120,9 @@ app.post("/api/level-up", async (req, res) => {
       [telegramId, MAX_LEVEL]
     );
 
+    // Pošalji notifikaciju u grupu
+    await sendStatusNotification(telegramId);
+
     res.json({ level: result.rows[0].level });
   } catch (err) {
     console.error("POST /api/level-up error:", err);
@@ -202,6 +205,9 @@ app.post("/api/update-profile", async (req, res) => {
       `UPDATE users SET ${updates.join(", ")} WHERE telegram_id = $${paramIndex}`,
       values
     );
+
+    // Pošalji notifikaciju u grupu
+    await sendStatusNotification(telegramId);
 
     res.json({ ok: true });
   } catch (err) {

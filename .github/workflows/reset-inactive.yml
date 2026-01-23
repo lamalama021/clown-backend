@@ -1,28 +1,25 @@
-name: Reset Inactive Users
+name: Reset inactive users
 
 on:
+  workflow_dispatch:
   schedule:
-    # Pokreće se svaki sat (na početku sata)
-    - cron: '0 * * * *'
-  workflow_dispatch: # Omogućava ručno pokretanje iz GitHub UI
+    - cron: "*/5 * * * *" # test
 
 jobs:
-  reset-statuses:
+  reset:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Reset inactive user statuses
-        env:
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          psql "$DATABASE_URL" -c "
-            UPDATE users 
-            SET status_message = NULL,
-                updated_at = NOW()
-            WHERE updated_at < NOW() - INTERVAL '4 hours'
-              AND status_message IS NOT NULL;
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "
+            UPDATE users
+            SET
+              level = 0,
+              location = NULL,
+              status_message = NULL,
+              updated_at = NOW()
+            WHERE updated_at < NOW() - INTERVAL '5 minutes';
           "
-      
-      - name: Log results
-        run: echo "✅ Inactive statuses reset completed"
-        
